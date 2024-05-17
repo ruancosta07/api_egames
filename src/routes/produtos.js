@@ -1,45 +1,34 @@
-const { supabaseProducts, supabaseBase } = require("../database/connect");
+const  supabaseProducts  = require("../database/connect");
 const produtos = require("express").Router();
 const multer = require("multer");
-const upload = multer({ storage: multer.memoryStorage() });
-
+const authMidleware = require("../middlewares/authMidleware");
+const Produto = require("../models/Produto");
+const compressImages = require("../middlewares/compressImages");
 produtos.get("/produtos", async (req, res) => {
-  const { data, error } = await supabaseProducts
-    .from("products")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error)
-    return res.status(400).json({ message: "Erro ao carregar produtos" });
-  return res.status(200).json(data);
+  try {
+    const produtosCarregados = await Produto.find().sort({
+      createdAt: "descending",
+    });
+    res.json(produtosCarregados);
+  } catch (error) {
+    throw error;
+  }
 });
 
-produtos.post("/criar-produto", upload.array("image"), async (req, res) => {
+const upload = multer({ storage: multer.memoryStorage() });
+produtos.post("/criar-produto", upload.array("image"), compressImages, authMidleware, async (req, res) => {
   const { title, description, price, oldPrice, category } = req.body;
   const files = req.files;
   const dataAtual = Date.now();
   let imageUrls = [];
 
-  function limpaSlug(str){
-    let mapaAcentosHex = {
-      a: /[\xE0-\xE6]/g,
-      e: /[\xE8-\xEB]/g,
-      i: /[\xEC-\xEF]/g,
-      o: /[\xF2-\xF6]/g,
-      u: /[\xF9-\xFC]/g,
-      c: /\xE7/g,
-      n: /\xF1/g,
-    };
-  for (let letra in mapaAcentosHex) {
-    let regex = mapaAcentosHex[letra];
-    str = str.replace(regex, letra);
-  }
-
-  str = str
-    .replace(/[^a-zA-Z0-9 ]/g, "")
-    .toLowerCase()
-    .replace(/ /g, "-");
-  return str;
-  }
+  let comentarios = [
+    {
+      usuario: "Ruan Costa",
+      comentario:
+        "Eu amei esse produto, chegou muito rápido e funcionou muito bem.",
+    },
+  ];
 
   for (let file of files) {
     const arrayBufferImage = Uint8Array.from(file.buffer).buffer;
@@ -69,30 +58,56 @@ produtos.post("/criar-produto", upload.array("image"), async (req, res) => {
     imageUrls.push(imageUrl.publicUrl);
   }
 
-  const { data, error } = await supabaseProducts
-    .from("products")
-    .insert([
-      { title, description, price, oldPrice, category, slug:limpaSlug(title), images: imageUrls },
-    ]);
+  function limpaSlug(str) {
+    let mapaAcentosHex = {
+      a: /[\xE0-\xE6]/g,
+      e: /[\xE8-\xEB]/g,
+      i: /[\xEC-\xEF]/g,
+      o: /[\xF2-\xF6]/g,
+      u: /[\xF9-\xFC]/g,
+      c: /\xE7/g,
+      n: /\xF1/g,
+    };
+    for (let letra in mapaAcentosHex) {
+      let regex = mapaAcentosHex[letra];
+      str = str.replace(regex, letra);
+    }
 
-  if (error) {
-    console.error("Erro ao inserir produto:", error);
-    return res.status(500).json({ error: error.message });
+    str = str
+      .replace(/[^a-zA-Z0-9 ]/g, "")
+      .toLowerCase()
+      .replace(/ /g, "-");
+    return str;
   }
 
-  return res.json({ message: "Produto criado com sucesso", data });
+  const novoProduto = {
+    title,
+    description,
+    price,
+    oldPrice,
+    category,
+    slug: limpaSlug(title),
+    images: imageUrls,
+    comments: comentarios,
+  };
+  try {
+    const produtoSalvo = await new Produto(novoProduto).save();
+    return res.json({ message: "Produto criado com sucesso", produtoSalvo });
+  } catch (error) {
+    throw error;
+  }
 });
 
 produtos.get("/produto/:id/:produto", async (req, res) => {
   const productUrl = req.params.produto;
   const id = req.params.id;
 
-  const { data, error } = await supabaseBase
-    .from("products")
-    .select("*")
-    .match({ slug: productUrl, id });
-    if(error) return res.json({error: 'produto não encontrado'})
-      return res.json(data)
+  const produto = await Produto.findOne({ slug: productUrl, _id: id });
+  if (!produto) {
+    return res.status(404).json({ error: "Produto não encontrado" });
+  }
+  return res.status(200).json(produto);
 });
+
 
 module.exports = produtos;
