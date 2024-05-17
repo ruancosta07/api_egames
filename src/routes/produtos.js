@@ -1,7 +1,7 @@
 const  supabaseProducts  = require("../database/connect");
 const produtos = require("express").Router();
 const multer = require("multer");
-const authMidleware = require("../middlewares/authMidleware");
+const authMidleware = require("../middlewares/authMiddleware");
 const Produto = require("../models/Produto");
 const compressImages = require("../middlewares/compressImages");
 produtos.get("/produtos", async (req, res) => {
