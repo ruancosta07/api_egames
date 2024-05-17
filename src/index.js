@@ -8,6 +8,7 @@ const usuario = require("./routes/usuario");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const compression = require("compression");
+const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 const sessionKey = process.env.SESSION_KEY;
 app.use(compression({ level: 3 }));
@@ -29,6 +30,16 @@ app.use(
 );
 app.use("/", produtos);
 app.use("/", usuario);
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+
+async function dbConnect() {
+  try{
+    const connection = await mongoose.connect(
+      `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.sdqptiw.mongodb.net/`
+    );
+    app.listen(port, () => console.log(`Server running at http://localhost:${port}, conectado ao db`))
+  }catch(error){
+    throw error
+  }
+}
+
+dbConnect()
