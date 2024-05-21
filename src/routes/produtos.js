@@ -4,8 +4,9 @@ const multer = require("multer");
 const authMidleware = require("../middlewares/authMiddleware");
 const Produto = require("../models/Produto");
 const compressImages = require("../middlewares/compressImages");
-const nodeCache = require('node-cache')
-const myCache = new nodeCache({stdTTL:3600, checkperiod:120})
+const nodeCache = require("node-cache");
+const myCache = new nodeCache({ stdTTL: 3600, checkperiod: 120 });
+const axios = require("axios").default;
 
 produtos.get("/produtos", async (req, res) => {
   try {
@@ -122,6 +123,41 @@ produtos.get("/produto/:id/:nome", async (req, res) => {
     return res.status(404).json({ error: "Produto não encontrado" });
   }
   return res.status(200).json(produto);
+});
+
+produtos.patch("/produto/:id/:nome", authMidleware, async function (req, res) {
+  const { id } = req.params;
+  const { nome } = req.params;
+  const { user, comment, title, rate } = req.body;
+  const dataAtual = new Date();
+  try {
+    const comentariosAnteriores = await (
+      await axios.get(`http://localhost:3000/produto/${id}/${nome}`)
+    ).data.comments;
+    const comentario = {
+      user,
+      comment,
+      title,
+      rate,
+      createdAt: `${dataAtual.getDate()}/${
+        dataAtual.getMonth() < 10 && "0" + (dataAtual.getMonth() + 1)
+      }/${dataAtual.getFullYear()}`,
+    };
+    const novosComentarios = [...comentariosAnteriores, comentario];
+    const produto = await Produto.findOne({ _id: id, slug: nome });
+    if (!produto) {
+      return res.status(404).json({ error: "Produto não encontrado" });
+    }
+    if (produto) {
+      const produtoAlterado = await Produto.findOneAndUpdate(
+        { _id: id, slug: nome },
+        { comments: novosComentarios }
+      );
+      res.json(produtoAlterado);
+    }
+  } catch (error) {
+    throw error;
+  }
 });
 
 module.exports = produtos;
