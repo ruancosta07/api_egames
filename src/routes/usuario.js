@@ -2,6 +2,7 @@ const usuario = require("express").Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Usuario = require("../models/Usuario");
+const authMidleware = require("../middlewares/authMiddleware");
 require("dotenv").config();
 const jwtKey = process.env.JWT_KEY;
 
@@ -61,6 +62,13 @@ usuario.post("/login", async (req, res) => {
     );
     res.status(200).json({ token });
   }
+});
+
+usuario.post("/token/validar", authMidleware, async (req, res) => {
+  const { authorization } = req.headers;
+  const [, token] = authorization.split(" ");
+  const decoded = jwt.verify(token, `${jwtKey}`)
+  res.status(200).json({ user: {email:decoded.email, name: decoded.name} });
 });
 
 module.exports = usuario;
