@@ -9,7 +9,6 @@ function authMidleware(req, res, next) {
     const [, token] = authorization.split(' ')
     try {
         const decoded = jwt.verify(token, `${jwtKey}`)
-        // res.json({token: decoded})
         next()
     } catch (error) {
         return res.status(401).json({error: 'Token inválido'})
