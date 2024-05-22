@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5173", "https://ruancosta-egames-2.vercel.app/"],
+    origin: ["http://localhost:3000", "http://localhost:5173", "https://ruancosta-egames-2.vercel.app"],
     credentials: true,
   })
 );
