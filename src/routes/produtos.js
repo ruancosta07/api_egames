@@ -5,18 +5,18 @@ const authMidleware = require("../middlewares/authMiddleware");
 const Produto = require("../models/Produto");
 const compressImages = require("../middlewares/compressImages");
 const nodeCache = require("node-cache");
-const myCache = new nodeCache({ stdTTL: 3600, checkperiod: 120 });
+const myCache = new nodeCache({ stdTTL: 300, checkperiod: 120 });
 const axios = require("axios").default;
 
 produtos.get("/produtos", async (req, res) => {
   try {
     let produtosCarregados = myCache.get("produtosFetch");
     if (!produtosCarregados) {
-      produtosCarregados = await Produto.find({}, ['title', 'images', 'price', 'oldPrice', 'description']).sort({
+      produtosCarregados = await Produto.find({}, ['title', 'images', 'price', 'oldPrice', 'description', 'slug']).sort({
         createdAt: "descending",
       });
       produtosCarregados = produtosCarregados.map((item)=> {
-        let produto = {title:item.title, images:item.images[0], price:item.price, oldPrice:item.oldPrice,description: item.description}
+        let produto = {title:item.title, images:item.images[0], price:item.price, oldPrice:item.oldPrice,description: item.description, slug: item.slug}
         return produto
       })
       myCache.set("produtosFetch", produtosCarregados);
