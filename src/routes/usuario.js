@@ -60,15 +60,99 @@ usuario.post("/login", async (req, res) => {
       `${jwtKey}`,
       { expiresIn: "1d" }
     );
-    res.status(200).json({ token });
+    res.status(200).json({ token, message: 'Usuário logado com sucessso' });
   }
 });
 
 usuario.post("/token/validar", authMidleware, async (req, res) => {
   const { authorization } = req.headers;
   const [, token] = authorization.split(" ");
-  const decoded = jwt.verify(token, `${jwtKey}`)
-  res.status(200).json({ user: {email:decoded.email, name: decoded.name} });
+  const decoded = jwt.verify(token, `${jwtKey}`);
+  res.status(200).json({ user: { email: decoded.email, name: decoded.name } });
+});
+
+usuario.post("/conta/carrinho", authMidleware, async (req, res) => {
+  const { authorization } = req.headers;
+  const [, token] = authorization.split(" ");
+  const decoded = jwt.verify(token, `${jwtKey}`);
+  const resposta = await Usuario.findOne({ email: decoded.email });
+  res.json(resposta.cart);
+});
+
+usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
+  try {
+    const { authorization } = req.headers;
+    const [, token] = authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+      const quantity = usuario.cart.quantity
+      const {
+        productTitle,
+        price,
+        oldPrice,
+        productLink,
+        srcImg,
+        description,
+        category,
+        id
+      } = req.body;
+      const novoProduto = {
+        productTitle,
+        price,
+        oldPrice,
+        productLink,
+        srcImg,
+        description,
+        quantity,
+        category,
+        id
+      };
+      const verificaProdutoAdicionado = usuario.cart.some(
+        (p) => p.id === novoProduto.id
+      );
+      if (verificaProdutoAdicionado == false) {
+        usuario.cart.push(novoProduto);
+        await usuario.save();
+        return res.status(200).json({
+          message: "Produto adicionado ao carrinho com sucesso",
+          cart: usuario.cart,
+        });
+      } else {
+        // const carrinhoQuantidadeAumentada = [...user.cart, {quantity: quantity + 1}]
+        return res.status(200).json({
+          message: "Produto adicionado ao carrinho com sucesso",
+          cart: [...usuario.cart, { quantity: quantity + 1 }],
+        });
+        res.status(401).json({ error: "Esse produto já está no seu carrinho" });
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao adicionar produto ao carrinho:", error);
+    return res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+usuario.post("/conta/carrinho/remover", authMidleware, async (req, res) => {
+  try {
+    const { authorization } = req.headers;
+    const [, token] = authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+    const {id} = req.body
+      const verificaProduto = usuario.cart.some((p)=> p.id == id)
+      if(verificaProduto){
+        const usuario = await Usuario.findOne({email: decoded.email})
+       const carrinhoFiltrado = usuario.cart.filter((item)=> item.id != id)
+        usuario.cart = carrinhoFiltrado
+        await usuario.save()
+        return res.status(200).json(usuario.cart)
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao remover produto ao carrinho:", error);
+    return res.status(500).json({ message: "Erro interno do servidor" });
+  }
 });
 
 module.exports = usuario;
