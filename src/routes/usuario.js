@@ -6,6 +6,7 @@ const authMidleware = require("../middlewares/authMiddleware");
 require("dotenv").config();
 const jwtKey = process.env.JWT_KEY;
 
+// * Rota de criação de conta
 usuario.post("/criar-conta", async (req, res) => {
   const { name, email, password } = req.body;
   const erros = {};
@@ -38,6 +39,7 @@ usuario.post("/criar-conta", async (req, res) => {
   }
 });
 
+// * Rota de login
 usuario.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const usuarioEncontrado = await Usuario.findOne({ email }).select(
@@ -60,10 +62,11 @@ usuario.post("/login", async (req, res) => {
       `${jwtKey}`,
       { expiresIn: "1d" }
     );
-    res.status(200).json({ token, message: 'Usuário logado com sucessso' });
+    res.status(200).json({ token, message: "Usuário logado com sucessso" });
   }
 });
 
+// * Rota que valida o token do usuário
 usuario.post("/token/validar", authMidleware, async (req, res) => {
   const { authorization } = req.headers;
   const [, token] = authorization.split(" ");
@@ -71,7 +74,8 @@ usuario.post("/token/validar", authMidleware, async (req, res) => {
   res.status(200).json({ user: { email: decoded.email, name: decoded.name } });
 });
 
-usuario.post("/conta/carrinho", authMidleware, async (req, res) => {
+// * Rota de carregamento dos itens do carrinho
+usuario.get("/conta/carrinho", authMidleware, async (req, res) => {
   const { authorization } = req.headers;
   const [, token] = authorization.split(" ");
   const decoded = jwt.verify(token, `${jwtKey}`);
@@ -79,6 +83,8 @@ usuario.post("/conta/carrinho", authMidleware, async (req, res) => {
   res.json(resposta.cart);
 });
 
+
+// * Rota de adicionar itens no carrinho
 usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
   try {
     const { authorization } = req.headers;
@@ -86,7 +92,6 @@ usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
     const decoded = jwt.verify(token, `${jwtKey}`);
     const usuario = await Usuario.findOne({ email: decoded.email });
     if (usuario) {
-      const quantity = usuario.cart.quantity
       const {
         productTitle,
         price,
@@ -95,7 +100,8 @@ usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
         srcImg,
         description,
         category,
-        id
+        quantity,
+        id,
       } = req.body;
       const novoProduto = {
         productTitle,
@@ -106,7 +112,7 @@ usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
         description,
         quantity,
         category,
-        id
+        id,
       };
       const verificaProdutoAdicionado = usuario.cart.some(
         (p) => p.id === novoProduto.id
@@ -119,12 +125,10 @@ usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
           cart: usuario.cart,
         });
       } else {
-        // const carrinhoQuantidadeAumentada = [...user.cart, {quantity: quantity + 1}]
         return res.status(200).json({
           message: "Produto adicionado ao carrinho com sucesso",
-          cart: [...usuario.cart, { quantity: quantity + 1 }],
+          cart: usuario.cart,
         });
-        res.status(401).json({ error: "Esse produto já está no seu carrinho" });
       }
     }
   } catch (error) {
@@ -132,6 +136,40 @@ usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
+
+// * Rota de atualização do produto (aumentar e diminuir a quantidade de itens)
+usuario.post("/conta/carrinho/atualizar", authMidleware, async (req, res) => {
+  try {
+    const { authorization } = req.headers;
+    const [, token] = authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+      const { id, quantity } = req.body;
+      const produtoCarrinho = usuario.cart.find((item) => item.id == id);
+      if (produtoCarrinho) {
+        const updatedCart = usuario.cart.map((item) =>
+          item.id == id ? { ...item, quantity: quantity } : item
+        );
+        usuario.cart = updatedCart;
+        await usuario.save();
+        console.log(usuario.cart);
+        res.status(200).json({
+          message: "Carrinho atualizado com sucesso",
+          cart: usuario.cart,
+        });
+      } else {
+        res.status(404).send("Produto não encontrado no carrinho");
+      }
+    } else {
+      res.status(404).send("Usuário não encontrado");
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Erro interno do servidor");
+  }
+});
+
 usuario.post("/conta/carrinho/remover", authMidleware, async (req, res) => {
   try {
     const { authorization } = req.headers;
@@ -139,14 +177,14 @@ usuario.post("/conta/carrinho/remover", authMidleware, async (req, res) => {
     const decoded = jwt.verify(token, `${jwtKey}`);
     const usuario = await Usuario.findOne({ email: decoded.email });
     if (usuario) {
-    const {id} = req.body
-      const verificaProduto = usuario.cart.some((p)=> p.id == id)
-      if(verificaProduto){
-        const usuario = await Usuario.findOne({email: decoded.email})
-       const carrinhoFiltrado = usuario.cart.filter((item)=> item.id != id)
-        usuario.cart = carrinhoFiltrado
-        await usuario.save()
-        return res.status(200).json(usuario.cart)
+      const { id } = req.body;
+      const verificaProduto = usuario.cart.some((p) => p.id == id);
+      if (verificaProduto) {
+        const usuario = await Usuario.findOne({ email: decoded.email });
+        const carrinhoFiltrado = usuario.cart.filter((item) => item.id != id);
+        usuario.cart = carrinhoFiltrado;
+        await usuario.save();
+        return res.status(200).json(usuario.cart);
       }
     }
   } catch (error) {
