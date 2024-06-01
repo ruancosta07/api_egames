@@ -12,11 +12,11 @@ produtos.get("/produtos", async (req, res) => {
   try {
     let produtosCarregados = myCache.get("produtosFetch");
     if (!produtosCarregados) {
-      produtosCarregados = await Produto.find({}, ['_id','title', 'images', 'price', 'oldPrice', 'description', 'slug', 'category']).sort({
+      produtosCarregados = await Produto.find({}, ['_id','title', 'images', 'price', 'oldPrice', 'slug', 'category']).sort({
         createdAt: "descending",
       });
       produtosCarregados = produtosCarregados.map((item)=> {
-        let produto = {_id:item._id,title:item.title, images:item.images[0], price:item.price, oldPrice:item.oldPrice,description: item.description, slug: item.slug, category: item.category}
+        let produto = {_id:item._id,title:item.title, images:item.images[0], price:item.price, oldPrice:item.oldPrice, slug: item.slug, category: item.category}
         return produto
       })
       myCache.set("produtosFetch", produtosCarregados);
