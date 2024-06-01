@@ -58,6 +58,7 @@ usuario.post("/login", async (req, res) => {
         id: usuarioEncontrado._id,
         email: usuarioEncontrado.email,
         name: usuarioEncontrado.name,
+        role: usuarioEncontrado.role
       },
       `${jwtKey}`,
       { expiresIn: "1d" }
@@ -79,8 +80,18 @@ usuario.get("/conta/carrinho", authMidleware, async (req, res) => {
   const { authorization } = req.headers;
   const [, token] = authorization.split(" ");
   const decoded = jwt.verify(token, `${jwtKey}`);
-  const resposta = await Usuario.findOne({ email: decoded.email });
-  res.json(resposta.cart);
+  const usuario = await Usuario.findOne({ email: decoded.email });
+  if(usuario){
+    try{
+      res.status(200).json(resposta.cart);
+    }
+    catch(error){
+      res.status(500).json({error: 'Erro ao carregar carrinho'})
+    }
+  }
+  else{
+    res.status(401).json({error: 'Carrinho não encontrado'})
+  }
 });
 
 
@@ -125,8 +136,8 @@ usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
           cart: usuario.cart,
         });
       } else {
-        return res.status(200).json({
-          message: "Produto adicionado ao carrinho com sucesso",
+        return res.status(403).json({
+          message: "Produto já adicionado ao carrinho",
           cart: usuario.cart,
         });
       }
@@ -170,7 +181,8 @@ usuario.post("/conta/carrinho/atualizar", authMidleware, async (req, res) => {
   }
 });
 
-usuario.post("/conta/carrinho/remover", authMidleware, async (req, res) => {
+// * Rota de delete do produto do carrinho
+usuario.delete("/conta/carrinho/remover", authMidleware, async (req, res) => {
   try {
     const { authorization } = req.headers;
     const [, token] = authorization.split(" ");
