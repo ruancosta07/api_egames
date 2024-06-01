@@ -185,7 +185,7 @@ usuario.post("/conta/carrinho/atualizar", authMidleware, async (req, res) => {
 });
 
 // * Rota de delete do produto do carrinho
-usuario.delete("/conta/carrinho/remover/:id", authMidleware, async (req, res) => {
+usuario.delete("/conta/carrinho/remover/", authMidleware, async (req, res) => {
   try {
     const { authorization } = req.headers;
     const [, token] = authorization.split(" ");
