@@ -78,20 +78,23 @@ usuario.post("/token/validar", authMidleware, async (req, res) => {
 // * Rota de carregamento dos itens do carrinho
 usuario.get("/conta/carrinho", authMidleware, async (req, res) => {
   const { authorization } = req.headers;
-  const [, token] = authorization.split(" ");
-  const decoded = jwt.verify(token, `${jwtKey}`);
-  const usuario = await Usuario.findOne({ email: decoded.email });
-  if(usuario){
+
+  if(!authorization){
+    res.status(400).json({error: "Autorização não fornecida"})
+  }
+
     try{
-      res.status(200).json(resposta.cart);
+      const [, token] = authorization.split(" ");
+      const decoded = jwt.verify(token, `${jwtKey}`);
+      const usuario = await Usuario.findOne({ email: decoded.email });
+      if(usuario){
+        res.status(200).json(usuario.cart);
+      }
     }
     catch(error){
       res.status(500).json({error: 'Erro ao carregar carrinho'})
     }
-  }
-  else{
-    res.status(401).json({error: 'Carrinho não encontrado'})
-  }
+  
 });
 
 
