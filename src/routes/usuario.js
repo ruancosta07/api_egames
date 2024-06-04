@@ -58,7 +58,7 @@ usuario.post("/login", async (req, res) => {
         id: usuarioEncontrado._id,
         email: usuarioEncontrado.email,
         name: usuarioEncontrado.name,
-        role: usuarioEncontrado.role
+        role: usuarioEncontrado.role,
       },
       `${jwtKey}`,
       { expiresIn: "1d" }
@@ -79,24 +79,21 @@ usuario.post("/token/validar", authMidleware, async (req, res) => {
 usuario.get("/conta/carrinho", authMidleware, async (req, res) => {
   const { authorization } = req.headers;
 
-  if(!authorization){
-    res.status(400).json({error: "Autorização não fornecida"})
+  if (!authorization) {
+    res.status(400).json({ error: "Autorização não fornecida" });
   }
 
-    try{
-      const [, token] = authorization.split(" ");
-      const decoded = jwt.verify(token, `${jwtKey}`);
-      const usuario = await Usuario.findOne({ email: decoded.email });
-      if(usuario){
-        res.status(200).json(usuario.cart);
-      }
+  try {
+    const [, token] = authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+      res.status(200).json(usuario.cart);
     }
-    catch(error){
-      res.status(500).json({error: 'Erro ao carregar carrinho'})
-    }
-  
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao carregar carrinho" });
+  }
 });
-
 
 // * Rota de adicionar itens no carrinho
 usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
@@ -151,6 +148,84 @@ usuario.post("/conta/carrinho/adicionar", authMidleware, async (req, res) => {
   }
 });
 
+usuario.get("/conta/favoritos", authMidleware, async (req, res) => {
+  const { authorization } = req.headers;
+  if (!authorization) return res.json({ error: "Autorização não fornecida" });
+  try {
+    const [, token] = authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+      const favoritos = usuario.favorites;
+      return res.status(200).json(favoritos);
+    }
+  } catch (error) {
+    console.error("Erro ao carregar favoritos:", error);
+    return res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+
+usuario.post("/conta/favoritos/adicionar", authMidleware, async (req, res) => {
+  try {
+    const {
+      productTitle,
+      price,
+      oldPrice,
+      productLink,
+      srcImg,
+      category,
+      quantity,
+      id,
+    } = req.body;
+    const novoProduto = {
+      productTitle,
+      price,
+      oldPrice,
+      productLink,
+      srcImg,
+      quantity,
+      category,
+      id,
+    };
+    const { authorization } = req.headers;
+    const [, token] = authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+      const { id } = req.body;
+      const verificaProduto = usuario.favorites.some((p) => p.id == id);
+      if (!verificaProduto) {
+        usuario.favorites.push(novoProduto);
+        await usuario.save();
+        return res.status(200).json(usuario.favorites);
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao adicionar produto ao favoritos:", error);
+    return res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+
+usuario.post("/conta/favoritos/remover", authMidleware, async (req, res) => {
+  try {
+    const { id } = req.body;
+    const { authorization } = req.headers;
+    const [, token] = authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+      const { id } = req.body;
+      const verificaProduto = usuario.favorites.filter((p) => p.id != id);
+      usuario.favorites = verificaProduto;
+      await usuario.save();
+      return res.status(200).json(usuario.favorites);
+    }
+  } catch (error) {
+    console.error("Erro ao adicionar produto ao favoritos:", error);
+    return res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+
 // * Rota de atualização do produto (aumentar e diminuir a quantidade de itens)
 usuario.post("/conta/carrinho/atualizar", authMidleware, async (req, res) => {
   try {
@@ -187,7 +262,7 @@ usuario.post("/conta/carrinho/atualizar", authMidleware, async (req, res) => {
 // * Rota de delete do produto do carrinho
 usuario.post("/conta/carrinho/remover/", authMidleware, async (req, res) => {
   const { authorization } = req.headers;
-  if(!authorization) return res.json({error: "Autorização não fornecida"})
+  if (!authorization) return res.json({ error: "Autorização não fornecida" });
   try {
     const [, token] = authorization.split(" ");
     const decoded = jwt.verify(token, `${jwtKey}`);
