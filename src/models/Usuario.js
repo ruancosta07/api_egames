@@ -22,7 +22,8 @@ const Usuario = new Schema({
         default: 'client'
     },
     adress:[],
-    cart: []
+    cart: [],
+    favorites:[]
 })
 
 Usuario.pre('save', async function(next){
