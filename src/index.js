@@ -1,31 +1,22 @@
-const express = require("express");
+import express from "express"
 const app = express();
 const port = 3000;
-const bodyParser = require("body-parser");
-const produtos = require("./routes/produtos");
-const cors = require("cors");
-const usuario = require("./routes/usuario");
-const cookieParser = require("cookie-parser");
-const session = require("express-session");
-const compression = require("compression");
-const { default: mongoose } = require("mongoose");
-require("dotenv").config();
-const sessionKey = process.env.SESSION_KEY;
+import produtos from "./routes/produtos.js";
+import cors from "cors";
+import usuario from "./routes/usuario.js";
+import cookieParser from"cookie-parser";
+import compression from "compression";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
 app.use(compression({ level: 3 }));
 app.use(cookieParser());
-app.use(
-  session({
-    secret: `${sessionKey}`,
-    resave: true,
-    saveUninitialized: true,
-  })
-);
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5173", "https://ruancosta-egames-2.vercel.app"],
-    credentials: true,
+    // origin: ["http://localhost:3000", "http://localhost:5173", "https://ruancosta-egames-2.vercel.app"],
+    // credentials: true,
   })
 );
 app.use("/", produtos);
