@@ -2,8 +2,11 @@ import supabaseProducts from "../database/connect.js";
 import Produto from "../models/Produto.js";
 import jwt from "jsonwebtoken";
 import nodeCache from "node-cache";
+import dotenv from "dotenv"
+import Usuario from "../models/Usuario.js";
+dotenv.config()
 const myCache = new nodeCache({ stdTTL: 300, checkperiod: 120 });
-
+const jwtKey = process.env.JWT_KEY
 // * controller de carregar todos os produtos
 const carregarProdutos = async (req, res) => {
   try {
@@ -43,10 +46,14 @@ const carregarProdutos = async (req, res) => {
 // * controller de criar um novo produto
 const criarProduto = async (req, res) => {
   const { title, description, price, oldPrice, category } = req.body;
-  const files = req.files;
   const dataAtual = Date.now();
-  let imageUrls = [];
+  const [, token] = req.headers.authorization.split(" ");
+  const decoded = jwt.decode(token, `${jwtKey}`)
+  const usuario = await Usuario.findOne({email: decoded.email})
 
+  if(usuario && usuario.role === "admin"){
+    const files = req.files;
+    let imageUrls = [];  
   for (let file of files) {
     const arrayBufferImage = Uint8Array.from(file.buffer).buffer;
 
@@ -105,7 +112,6 @@ const criarProduto = async (req, res) => {
     category,
     slug: limpaSlug(title),
     images: imageUrls,
-    comments: comentarios,
   };
   try {
     const produtoSalvo = await new Produto(novoProduto).save();
@@ -113,6 +119,7 @@ const criarProduto = async (req, res) => {
   } catch (error) {
     throw error;
   }
+}
 };
 
 // * controller de carregar um produto pelo ID
