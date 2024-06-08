@@ -1,6 +1,8 @@
-const jwt = require('jsonwebtoken')
+import jwt from 'jsonwebtoken'
+import dotenv from "dotenv";
+dotenv.config();
 const jwtKey = process.env.JWT_KEY
-function authMidleware(req, res, next) {
+const authMidleware = (req, res, next) => {
     const {authorization} = req.headers;
 
     if(!authorization){
@@ -15,4 +17,4 @@ function authMidleware(req, res, next) {
     }
 }
 
-module.exports = authMidleware;
+export default authMidleware;
