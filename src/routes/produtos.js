@@ -1,165 +1,44 @@
-const supabaseProducts = require("../database/connect");
-const produtos = require("express").Router();
-const multer = require("multer");
-const authMidleware = require("../middlewares/authMiddleware");
-const Produto = require("../models/Produto");
-const compressImages = require("../middlewares/compressImages");
-const nodeCache = require("node-cache");
-const myCache = new nodeCache({ stdTTL: 300, checkperiod: 120 });
-const axios = require("axios").default;
-
-produtos.get("/produtos", async (req, res) => {
-  try {
-    let produtosCarregados = myCache.get("produtosFetch");
-    if (!produtosCarregados) {
-      produtosCarregados = await Produto.find({}, ['_id','title', 'images', 'price', 'oldPrice', 'slug', 'category']).sort({
-        createdAt: "descending",
-      });
-      produtosCarregados = produtosCarregados.map((item)=> {
-        let produto = {_id:item._id,title:item.title, images:item.images[0], price:item.price, oldPrice:item.oldPrice, slug: item.slug, category: item.category}
-        return produto
-      })
-      myCache.set("produtosFetch", produtosCarregados);
-    }
-    res.json(produtosCarregados);
-  } catch (error) {
-    throw error;
-  }
-});
-
+import express from "express";
+import multer from "multer";
+import authMidleware from "../middlewares/authMiddleware.js";
+import compressImages from "../middlewares/compressImages.js";
+import ProdutosControllers from "../controllers/ProdutosControllers.js";
+const produtos = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// * Rota de carregar todos os produtos
+produtos.get("/produtos", ProdutosControllers.carregarProdutos);
+
+// * Rota de criar um novo produto
 produtos.post(
   "/criar-produto",
   upload.array("image"),
   compressImages,
   authMidleware,
-  async (req, res) => {
-    const { title, description, price, oldPrice, category } = req.body;
-    const files = req.files;
-    const dataAtual = Date.now();
-    let imageUrls = [];
-
-    let comentarios = [
-      {
-        usuario: "Ruan Costa",
-        comentario:
-          "Eu amei esse produto, chegou muito rápido e funcionou muito bem.",
-      },
-    ];
-
-    for (let file of files) {
-      const arrayBufferImage = Uint8Array.from(file.buffer).buffer;
-
-      const { data: uploadedFile, error: uploadError } =
-        await supabaseProducts.storage
-          .from("products_images")
-          .upload(`${dataAtual}-${file.originalname}`, arrayBufferImage, {
-            contentType: ["image/jpeg", "image/webp"],
-            upsert: false,
-          });
-
-      if (uploadError) {
-        console.error("Erro ao fazer upload da imagem:", uploadError);
-        return res.status(500).json({ error: uploadError.message });
-      }
-
-      const { data: imageUrl, error: urlError } = supabaseProducts.storage
-        .from("products_images")
-        .getPublicUrl(`${dataAtual}-${file.originalname}`);
-
-      if (urlError) {
-        console.error("Erro ao obter a URL da imagem:", urlError);
-        return res.status(500).json({ error: urlError.message });
-      }
-
-      imageUrls.push(imageUrl.publicUrl);
-    }
-
-    function limpaSlug(str) {
-      let mapaAcentosHex = {
-        a: /[\xE0-\xE6]/g,
-        e: /[\xE8-\xEB]/g,
-        i: /[\xEC-\xEF]/g,
-        o: /[\xF2-\xF6]/g,
-        u: /[\xF9-\xFC]/g,
-        c: /\xE7/g,
-        n: /\xF1/g,
-      };
-      for (let letra in mapaAcentosHex) {
-        let regex = mapaAcentosHex[letra];
-        str = str.replace(regex, letra);
-      }
-
-      str = str
-        .replace(/[^a-zA-Z0-9 ]/g, "")
-        .toLowerCase()
-        .replace(/ /g, "-");
-      return str;
-    }
-
-    const novoProduto = {
-      title,
-      description,
-      price,
-      oldPrice,
-      category,
-      slug: limpaSlug(title),
-      images: imageUrls,
-      comments: comentarios,
-    };
-    try {
-      const produtoSalvo = await new Produto(novoProduto).save();
-      return res.json({ message: "Produto criado com sucesso", produtoSalvo });
-    } catch (error) {
-      throw error;
-    }
-  }
+  ProdutosControllers.criarProduto
 );
 
-produtos.get("/produto/:id/:nome", async (req, res) => {
-  const productUrl = req.params.nome;
-  const id = req.params.id;
+// * Rota de carregar um produto pelo ID
+produtos.get("/produto/:id/:nome", ProdutosControllers.carregaProdutoPeloID);
 
-  const produto = await Produto.findOne({ _id: id, slug: productUrl });
-  if (!produto) {
-    return res.status(404).json({ error: "Produto não encontrado" });
-  }
-  return res.status(200).json(produto);
-});
+// * Rota de dashboard dos produtos
+produtos.get("/produtos/dashboard", ProdutosControllers.produtosDashBoard);
 
-produtos.patch("/produto/:id/:nome", authMidleware, async function (req, res) {
-  const { id } = req.params;
-  const { nome } = req.params;
-  const { user, comment, title, rate } = req.body;
-  const dataAtual = new Date();
-  try {
-    const comentariosAnteriores = await (
-      await axios.get(`http://localhost:3000/produto/${id}/${nome}`)
-    ).data.comments;
-    const comentario = {
-      user,
-      comment,
-      title,
-      rate,
-      createdAt: `${dataAtual.getDate()}/${
-        dataAtual.getMonth() < 10 && "0" + (dataAtual.getMonth() + 1)
-      }/${dataAtual.getFullYear()}`,
-    };
-    const novosComentarios = [...comentariosAnteriores, comentario];
-    const produto = await Produto.findOne({ _id: id, slug: nome });
-    if (!produto) {
-      return res.status(404).json({ error: "Produto não encontrado" });
-    }
-    if (produto) {
-      const produtoAlterado = await Produto.findOneAndUpdate(
-        { _id: id, slug: nome },
-        { comments: novosComentarios }
-      );
-      res.json(produtoAlterado);
-    }
-  } catch (error) {
-    throw error;
-  }
-});
+// * Rota de atualizar o views do produto pelo ID
+produtos.post("/produto/:id/:nome", ProdutosControllers.aumentarViewsDoProduto);
 
-module.exports = produtos;
+// * Rota de adicionar comentario ao produto pelo ID e nome do produto
+produtos.post(
+  "/produto/comentarios/adicionar/:id/:nome",
+  authMidleware,
+  ProdutosControllers.adicionarComentario
+);
+
+// * Rota de editar um produto pelo ID
+produtos.post(
+  "/produtos/editar/:id",
+  authMidleware,
+  ProdutosControllers.editarProduto
+);
+
+export default produtos;
