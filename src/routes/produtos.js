@@ -19,7 +19,7 @@ produtos.post(
 );
 
 // * Rota de carregar um produto pelo ID
-produtos.get("/produto/:id/:nome", ProdutosControllers.carregaProdutoPeloID);
+produtos.get("/produto/:id/:nome", ProdutosControllers.carregaProdutoPeloIdeSlug);
 
 // * Rota de dashboard dos produtos
 produtos.get("/produtos/dashboard", ProdutosControllers.produtosDashBoard);
@@ -35,7 +35,7 @@ produtos.post(
 );
 
 // * Rota de editar um produto pelo ID
-produtos.post(
+produtos.patch(
   "/produtos/editar/:id",
   authMidleware,
   ProdutosControllers.editarProduto
