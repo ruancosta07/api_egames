@@ -19,10 +19,10 @@ usuario.get("/conta/carrinho", UsuarioControllers.carregarCarrinho);
 usuario.post("/conta/carrinho/adicionar", UsuarioControllers.adicionarProduto);
 
 // * Rota de atualização do produto (aumentar e diminuir a quantidade de itens)
-usuario.post("/conta/carrinho/atualizar", authMidleware, UsuarioControllers.atualizarCarrinho);
+usuario.patch("/conta/carrinho/atualizar", authMidleware, UsuarioControllers.atualizarCarrinho);
 
 // * Rota de delete do produto do carrinho
-usuario.post("/conta/carrinho/remover/", authMidleware, UsuarioControllers.removerProdutoDosCarrinhos);
+usuario.delete("/conta/carrinho/remover/:id", authMidleware, UsuarioControllers.removerProdutoDosCarrinhos);
 
 // * Rota de carregamento dos favoritos
 usuario.get("/conta/favoritos", authMidleware, UsuarioControllers.carregarFavoritos);
@@ -31,13 +31,13 @@ usuario.get("/conta/favoritos", authMidleware, UsuarioControllers.carregarFavori
 usuario.post("/conta/favoritos/adicionar", authMidleware, UsuarioControllers.adicionarProdutoAosFavoritos);
 
 // * Rota de remover itens do favoritos
-usuario.post("/conta/favoritos/remover", authMidleware, UsuarioControllers.removerProdutoDosFavoritos);
+usuario.delete("/conta/favoritos/remover/:id", authMidleware, UsuarioControllers.removerProdutoDosFavoritos);
 
 // * Rota de pegar dados da conta do usuário
 usuario.get("/conta", authMidleware, UsuarioControllers.carregarConta);
 
 // * Rota de atualizar dados da conta do usuário
-usuario.post("/conta/atualizar", authMidleware, UsuarioControllers.atualizarConta);
+usuario.patch("/conta/atualizar", authMidleware, UsuarioControllers.atualizarConta);
 
 // * Rota de confirmar a senha do usuário
 usuario.post("/conta/confirmar-senha", authMidleware, UsuarioControllers.confirmarSenha);
