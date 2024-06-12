@@ -19,6 +19,9 @@ app.use(
     // credentials: true,
   })
 );
+import swaggerUi from "swagger-ui-express";
+import swaggerDocument from "./swagger.json" assert { type: "json" };
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use("/", produtos);
 app.use("/", usuario);
 
