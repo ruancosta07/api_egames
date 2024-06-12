@@ -75,7 +75,7 @@ const validarToken = async (req, res) => {
   if (usuario) {
     res
       .status(200)
-      .json({ user: { email: decoded.email, name: decoded.name } });
+      .json({ user: { email: decoded.email, name: decoded.name, role: decoded.role } });
   } else {
     res.status(401).json({ error: "Usuário não encontrado" });
   }
@@ -217,9 +217,8 @@ const adicionarProdutoAosFavoritos = async (req, res) => {
 // * controller de remover produto do carrinho
 const removerProdutoDosFavoritos = async (req, res) => {
   try {
-    const { id } = req.body;
-    const { authorization } = req.headers;
-    const [, token] = authorization.split(" ");
+    const { id } = req.params;
+    const [, token] = req.headers.authorization.split(" ");
     const decoded = jwt.verify(token, `${jwtKey}`);
     const usuario = await Usuario.findOne({ email: decoded.email });
     if (usuario) {
@@ -269,14 +268,12 @@ const atualizarCarrinho = async (req, res) => {
 
 // * controller de remover produto do carrinho
 const removerProdutoDosCarrinhos = async (req, res) => {
-  const { authorization } = req.headers;
-  if (!authorization) return res.json({ error: "Autorização não fornecida" });
   try {
-    const [, token] = authorization.split(" ");
+    const [, token] = req.headers.authorization.split(" ");
     const decoded = jwt.verify(token, `${jwtKey}`);
     const usuario = await Usuario.findOne({ email: decoded.email });
     if (usuario) {
-      const { id } = req.body;
+      const { id } = req.params;
       const verificaProduto = usuario.cart.some((p) => p.id == id);
       if (verificaProduto) {
         const usuario = await Usuario.findOne({ email: decoded.email });
