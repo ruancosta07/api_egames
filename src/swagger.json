@@ -1,0 +1,675 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Egames API",
+      "description": "API para o projeto EGames, um ecommerce voltado para venda de produtos para gamers",
+      "version": "1.0.0",
+      "contact": {
+        "name": "Ruan Costa",
+        "email": "ruan.costa@gmail.com",
+        "url": "https://ruancostadev.com.br"
+      }
+    },
+    "servers": [
+      {
+        "url": "http://localhost:3000",
+        "description": "Servidor de Desenvolvimento"
+      },
+      {
+        "url": "https://api-egames.vercel.app",
+        "description": "Servidor de Produção"
+      }
+    ],
+    "paths": {
+      "/produtos": {
+        "get": {
+          "tags": ["Produtos"],
+          "summary": "Retorna todos os produtos",
+          "responses": {
+            "200": {
+              "description": "Retornado com sucesso",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Produtos"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/produtos/{id}/{slug}": {
+        "get": {
+          "tags": ["Produtos"],
+          "summary": "Retorna um produto pelo ID e pelo slug",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID do produto",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "slug",
+              "in": "path",
+              "description": "Nome do produto",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Retornado com sucesso",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Produto"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Produto não encontrado"
+            }
+          }
+        }
+      },
+      "/produtos/dashboard": {
+        "get": {
+          "tags": ["Produtos"],
+          "summary": "Retorna apenas as visualizações, nomes e ids dos produtos",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Retornado com sucesso",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ProdutosDashboard"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Autorização inválida"
+            }
+          }
+        }
+      },
+      "/produto/comentarios/adicionar/{id}/{nome}": {
+        "post": {
+          "tags": ["Produtos"],
+          "summary": "Adiciona um comentário ao produto",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID do produto",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "nome",
+              "in": "path",
+              "description": "Nome do produto",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "description": "Comentário adicionado",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comentario"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Comentário adicionado com sucesso"
+            },
+            "401": {
+              "description": "Autorização inválida"
+            }
+          }
+        }
+      },
+"/criar-conta": {
+  "post": {
+    "tags": ["Usuário"],
+    "summary": "Cria uma conta",
+    "requestBody": {
+      "description": "Dados da conta do usuário",
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "example": "João Silva"
+              },
+              "email": {
+                "type": "string",
+                "example": "joao.silva@gmail.com"
+              },
+              "password": {
+                "type": "string",
+                "example": "123456"
+              }
+            },
+            "required": ["name", "email", "password"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Conta criada com sucesso"
+      },
+      "400": {
+        "description": "Campos obrigatórios não informados"
+      }
+    }
+  }
+},
+      "/login": {
+        "post": {
+          "tags": ["Usuário"],
+          "summary": "Login",
+          
+          "requestBody": {
+            "description": "Dados do usuário",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioLogin"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Usuário logado com sucesso"
+            },
+            "400": {
+              "description": "Campos obrigatórios não informados"
+            }
+          }
+        }
+      },
+"/token/validar": {
+  "post": {
+    "tags": ["Usuário"],
+    "summary": "Verifica se o token do usuário é válido",
+    "requestBody": {
+      "description": "Validar o token do usuário logado",
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+              }
+            },
+            "required": ["token"]
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Token válido",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Usuario"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Token inválido"
+      }
+    }
+  }
+},
+      "/conta/carrinho": {
+        "get": {
+          "tags": ["Usuário"],
+          "summary": "Retorna o carrinho de compras do usuário",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Carrinho carregado com sucesso",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CarrinhoUsuario"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Autorização não fornecida"
+            },
+            "500": {
+              "description": "Erro ao carregar carrinho"
+            }
+          }
+        }
+      },
+      "/conta/carrinho/adicionar": {
+        "post": {
+          "tags": ["Usuário"],
+          "summary": "Adiciona um produto ao carrinho",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "description": "Dados do produto a ser adicionado ao carrinho",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Produto"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Produto adicionado ao carrinho com sucesso"
+            },
+            "403": {
+              "description": "Produto já adicionado ao carrinho"
+            },
+            "500": {
+              "description": "Erro interno do servidor"
+            }
+          }
+        }
+      },
+      "/conta/carrinho/atualizar": {
+        "patch": {
+          "tags": ["Usuário"],
+          "summary": "Atualiza a quantidade de um produto no carrinho",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "description": "Dados do produto a ser atualizado no carrinho",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "123"
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "example": 2
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Carrinho atualizado com sucesso"
+            },
+            "404": {
+              "description": "Produto não encontrado no carrinho"
+            },
+            "500": {
+              "description": "Erro interno do servidor"
+            }
+          }
+        }
+      },
+      "/conta/carrinho/remover/{id}": {
+        "delete": {
+          "tags": ["Usuário"],
+          "summary": "Remove um produto do carrinho",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "description": "ID do produto a ser removido do carrinho",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Produto removido do carrinho com sucesso"
+            },
+            "404": {
+              "description": "Produto não encontrado no carrinho"
+            },
+            "500": {
+              "description": "Erro interno do servidor"
+            }
+          }
+        }
+      },
+      "/conta/favoritos": {
+        "get": {
+          "tags": ["Usuário"],
+          "summary": "Retorna os produtos favoritos do usuário",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Favoritos carregados com sucesso",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Favoritos"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Autorização não fornecida"
+            },
+            "500": {
+              "description": "Erro ao carregar favoritos"
+            }
+          }
+        }
+      },
+      "/conta/favoritos/adicionar": {
+        "post": {
+          "tags": ["Usuário"],
+          "summary": "Adiciona um produto aos favoritos",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "description": "Dados do produto a ser adicionado aos favoritos",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Produto"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Produto adicionado aos favoritos com sucesso"
+            },
+            "403": {
+              "description": "Produto já adicionado aos favoritos"
+            },
+            "500": {
+              "description": "Erro interno do servidor"
+            }
+          }
+        }
+      },
+      "/conta/favoritos/remover/{id}": {
+        "delete": {
+          "tags": ["Usuário"],
+          "summary": "Remove um produto dos favoritos",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "description": "ID do produto a ser removido dos favoritos",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Produto removido dos favoritos com sucesso"
+            },
+            "404": {
+              "description": "Produto não encontrado nos favoritos"
+            },
+            "500": {
+              "description": "Erro interno do servidor"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Produto": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "123"
+            },
+            "title": {
+              "type": "string",
+              "example": "Produto 1"
+            },
+            "description": {
+              "type": "string",
+              "example": "Descrição do Produto 1"
+            },
+            "price": {
+              "type": "number",
+              "example": 100
+            },
+            "oldPrice": {
+              "type": "number",
+              "example": 130
+            },
+            "images":{
+                "type": "array",
+                "items":{
+                    "type": "object",
+                    "properties":{
+                        "url":{
+                            "type": "string",
+                            "example": "https:urlimagem.com"
+                        }
+                    }
+                }
+            }
+          }
+        },
+        "Produtos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Produto"
+          }
+        },
+        "ProdutosDashboard": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": "123"
+              },
+              "title": {
+                "type": "string",
+                "example": "Produto 1"
+              },
+              "views": {
+                "type": "integer",
+                "example": 100
+              },
+              "slug":{
+                  "type": "string",
+                  "example": "produto-1"
+              }
+            }
+          }
+        },
+        "Comentario": {
+          "type": "object",
+          "properties": {
+            "userId": {
+              "type": "string",
+              "example": "123"
+            },
+            "comment": {
+              "type": "string",
+              "example": "Ótimo produto!"
+            }
+          }
+        },
+        "Usuario": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "example": "João Silva"
+            },
+            "email": {
+              "type": "string",
+              "example": "joao.silva@gmail.com"
+            },
+            "role": {
+              "type": "string",
+              "example": "client"
+            }
+          }
+        },
+        "CarrinhoUsuario": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "123"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Produto"
+              }
+            }
+          }
+        },
+        "Favoritos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Produto"
+          }
+        },
+        "UsuarioCriarConta":{
+            "type": "object",
+            "properties": {
+                "name":{
+                    "type": "string",
+                    "example": "João Silva"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "joao.silva@gmail.com"
+                },
+                "password":{
+                    "type": "string",
+                    "example": "123456"
+                }
+            }
+        },
+        "UsuarioLogin":{
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "joao.silva@gmail.com"
+                },
+                "password":{
+                    "type": "string",
+                    "example": "123456"
+                }
+            }
+        }
+      },
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    }
+  }
+  
