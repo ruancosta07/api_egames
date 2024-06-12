@@ -123,8 +123,8 @@ const criarProduto = async (req, res) => {
 };
 
 // * controller de carregar um produto pelo ID
-const carregaProdutoPeloID = async (req, res) => {
-  const productUrl = req.params.nome;
+const carregaProdutoPeloIdeSlug = async (req, res) => {
+  const productUrl = req.params.name;
   const id = req.params.id;
 
   const produto = await Produto.findOne({ _id: id, slug: productUrl });
@@ -266,7 +266,7 @@ const editarProduto = async (req, res) => {
 const ProdutosControllers = {
   carregarProdutos,
   criarProduto,
-  carregaProdutoPeloID,
+  carregaProdutoPeloIdeSlug,
   produtosDashBoard,
   aumentarViewsDoProduto,
   editarProduto,
