@@ -45,7 +45,7 @@ const login = async (req, res) => {
     "+password"
   );
   if (!usuarioEncontrado) {
-    return res.status(401).json({ error: "Email ou senha inválidos" });
+    return res.status(404).json({ error: "Usuário não encontrado" });
   }
   if (usuarioEncontrado) {
     const result = await bcrypt.compare(password, usuarioEncontrado.password);
@@ -154,6 +154,60 @@ const adicionarProduto = async (req, res) => {
   }
 };
 
+// * controller de atualizar carrinho
+const atualizarCarrinho = async (req, res) => {
+  try {
+    const { authorization } = req.headers;
+    const [, token] = authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+      const { id, quantity } = req.body;
+      const produtoCarrinho = usuario.cart.find((item) => item.id == id);
+      if (produtoCarrinho) {
+        const updatedCart = usuario.cart.map((item) =>
+          item.id == id ? { ...item, quantity: quantity } : item
+        );
+        usuario.cart = updatedCart;
+        await usuario.save();
+        res.status(200).json({
+          message: "Carrinho atualizado com sucesso",
+          cart: usuario.cart,
+        });
+      } else {
+        res.status(404).send("Produto não encontrado no carrinho");
+      }
+    } else {
+      res.status(404).send("Usuário não encontrado");
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Erro interno do servidor");
+  }
+};
+
+// * controller de remover produto do carrinho
+const removerProdutoDoCarrinho = async (req, res) => {
+  try {
+    const [, token] = req.headers.authorization.split(" ");
+    const decoded = jwt.verify(token, `${jwtKey}`);
+    const usuario = await Usuario.findOne({ email: decoded.email });
+    if (usuario) {
+      const { id } = req.params;
+      const verificaProduto = usuario.cart.some((p) => p.id == id);
+      if (verificaProduto) {
+        const usuario = await Usuario.findOne({ email: decoded.email });
+        const carrinhoFiltrado = usuario.cart.filter((item) => item.id != id);
+        usuario.cart = carrinhoFiltrado;
+        await usuario.save();
+        return res.status(200).json(usuario.cart);
+      }
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Erro interno do servidor" });
+  }
+};
+
 // * controller de carregar favoritos
 const carregarFavoritos = async (req, res) => {
   const { authorization } = req.headers;
@@ -180,9 +234,7 @@ const adicionarProdutoAosFavoritos = async (req, res) => {
       price,
       oldPrice,
       productLink,
-      srcImg,
-      category,
-      quantity,
+      image,
       id,
     } = req.body;
     const novoProduto = {
@@ -190,9 +242,7 @@ const adicionarProdutoAosFavoritos = async (req, res) => {
       price,
       oldPrice,
       productLink,
-      srcImg,
-      quantity,
-      category,
+      image,
       id,
     };
     const { authorization } = req.headers;
@@ -229,62 +279,6 @@ const removerProdutoDosFavoritos = async (req, res) => {
       return res.status(200).json(usuario.favorites);
     }
   } catch (error) {
-    console.error("Erro ao adicionar produto ao favoritos:", error);
-    return res.status(500).json({ message: "Erro interno do servidor" });
-  }
-};
-
-// * controller de atualizar carrinho
-const atualizarCarrinho = async (req, res) => {
-  try {
-    const { authorization } = req.headers;
-    const [, token] = authorization.split(" ");
-    const decoded = jwt.verify(token, `${jwtKey}`);
-    const usuario = await Usuario.findOne({ email: decoded.email });
-    if (usuario) {
-      const { id, quantity } = req.body;
-      const produtoCarrinho = usuario.cart.find((item) => item.id == id);
-      if (produtoCarrinho) {
-        const updatedCart = usuario.cart.map((item) =>
-          item.id == id ? { ...item, quantity: quantity } : item
-        );
-        usuario.cart = updatedCart;
-        await usuario.save();
-        res.status(200).json({
-          message: "Carrinho atualizado com sucesso",
-          cart: usuario.cart,
-        });
-      } else {
-        res.status(404).send("Produto não encontrado no carrinho");
-      }
-    } else {
-      res.status(404).send("Usuário não encontrado");
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Erro interno do servidor");
-  }
-};
-
-// * controller de remover produto do carrinho
-const removerProdutoDosCarrinhos = async (req, res) => {
-  try {
-    const [, token] = req.headers.authorization.split(" ");
-    const decoded = jwt.verify(token, `${jwtKey}`);
-    const usuario = await Usuario.findOne({ email: decoded.email });
-    if (usuario) {
-      const { id } = req.params;
-      const verificaProduto = usuario.cart.some((p) => p.id == id);
-      if (verificaProduto) {
-        const usuario = await Usuario.findOne({ email: decoded.email });
-        const carrinhoFiltrado = usuario.cart.filter((item) => item.id != id);
-        usuario.cart = carrinhoFiltrado;
-        await usuario.save();
-        return res.status(200).json(usuario.cart);
-      }
-    }
-  } catch (error) {
-    console.error("Erro ao remover produto ao carrinho:", error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
 };
@@ -334,39 +328,69 @@ const atualizarConta = async (req, res) => {
   }
 };
 
-// * controller de confirmar senha
+// * Controller de confirmar senha
 const confirmarSenha = async (req, res) => {
-  const { authorization } = req.headers;
-  const [, token] = authorization.split(" ");
-  const decoded = jwt.verify(token, `${jwtKey}`);
-  const { password } = req.body;
-  const usuario = await Usuario.findOne({ email: decoded.email }).select(
-    "+password"
-  );
-  if (usuario) {
+  try {
+    const { authorization } = req.headers;
+    if (!authorization) {
+      return res.status(401).json({ error: "Token de autorização não fornecido" });
+    }
+    const [, token] = authorization.split(" ");
+    if (!token) {
+      return res.status(401).json({ error: "Token não fornecido" });
+    }
+    
+    const decoded = jwt.verify(token, jwtKey);
+    const { password } = req.body;
+    
+    const usuario = await Usuario.findOne({ email: decoded.email }).select("+password");
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+    
     const result = await bcrypt.compare(password, usuario.password);
     if (result) {
       return res.status(200).json({ message: "Senha confirmada com sucesso" });
     } else {
       return res.status(401).json({ error: "Senha incorreta" });
     }
+  } catch (error) {
+    console.error("Erro ao confirmar senha:", error);
+    return res.status(500).json({ error: "Erro interno do servidor" });
   }
 };
 
-// * controller de alterar senha
+// * Controller de alterar senha
 const alterarSenha = async (req, res) => {
-  const { authorization } = req.headers;
-  const [, token] = authorization.split(" ");
-  const decoded = jwt.verify(token, `${jwtKey}`);
-  const usuario = await Usuario.findOne({ email: decoded.email }).select(
-    "+password"
-  );
-  if (usuario) {
+  try {
+    const { authorization } = req.headers;
+    if (!authorization) {
+      return res.status(401).json({ error: "Token de autorização não fornecido" });
+    }
+    const [, token] = authorization.split(" ");
+    if (!token) {
+      return res.status(401).json({ error: "Token não fornecido" });
+    }
+
+    const decoded = jwt.verify(token, jwtKey);
+    
+    const usuario = await Usuario.findOne({ email: decoded.email }).select("+password");
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+    
     const { password } = req.body;
-    usuario.password = password;
+    if (!password) {
+      return res.status(400).json({ error: "Nova senha não fornecida" });
+    }
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    usuario.password = hashedPassword;
     await usuario.save();
+    
     return res.status(200).json({ message: "Senha alterada com sucesso" });
-  } else {
+  } catch (error) {
+    console.error("Erro ao alterar senha:", error);
     return res.status(500).json({ error: "Erro interno do servidor" });
   }
 };
@@ -382,7 +406,7 @@ const UsuarioControllers = {
   carregarFavoritos,
   adicionarProdutoAosFavoritos,
   removerProdutoDosFavoritos,
-  removerProdutoDosCarrinhos,
+  removerProdutoDoCarrinho,
   carregarConta,
   atualizarConta,
   confirmarSenha,
