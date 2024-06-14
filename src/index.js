@@ -62,7 +62,7 @@ const options = {
 };
 const swaggerDocument = swaggerJSDoc(options);
 // Serve a documentação Swagger UI
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, {customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css'}));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, {customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.css'}));
 app.use("/", produtos);
 app.use("/", usuario);
 
