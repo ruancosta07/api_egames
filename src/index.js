@@ -7,19 +7,14 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import { readFile } from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-
-dotenv.config();
-
+// import swaggerDocument from "../swagger.json";
+// import {readFile} from "fs/promises"
+// const json = JSON.parse(await readFile("./swagger.json", "utf8"))
+import swaggerJSDoc from "swagger-jsdoc";
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Necessário para resolver corretamente os caminhos em ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+dotenv.config();
 app.use(compression({ level: 3 }));
 app.use(cookieParser());
 app.use(express.json());
@@ -30,46 +25,58 @@ app.use(
     // credentials: true,
   })
 );
-
-// Servir arquivos estáticos
-app.use(express.static(path.join(__dirname)));
-
-// Carregar swagger.json
-let swaggerDocument;
-try {
-  const swaggerPath = path.join(__dirname, 'swagger.json');
-  swaggerDocument = JSON.parse(await readFile(swaggerPath, 'utf-8'));
-} catch (error) {
-  console.error("Erro ao carregar o arquivo swagger.json:", error);
-}
-
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'API Egames',
+      version: '1.0.0',
+      description: 'Essa é a documentação da API Egames, um projeto criado por mim voltado para a venda de produtos gamers, resolvi desponibilzar a API para outras pessoas criarem seus projetos com ela ;). Desenvolvido com o Node.js, Express e MongoDB',
+      contact: {
+        name: 'Ruan Costa',
+        url: 'https:ruancostadev.com.br',
+        email: 'ruan.costa.ti0805@gmail.com',
+      },
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Servidor de Desenvolvimento'
+      },
+      {
+        url: 'https://api-egames.vercel.app',
+        description: 'Servidor de Produção'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+  },
+  apis: ['./src/routes/*.js'], // Caminho para os arquivos das rotas
+};
+const swaggerDocument = swaggerJSDoc(options);
 // Serve a documentação Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-// Rotas
 app.use("/", produtos);
 app.use("/", usuario);
 
-// Conectar ao banco de dados e iniciar o servidor
 async function dbConnect() {
   try {
-    await mongoose.connect(
+    const connection = await mongoose.connect(
       `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.sdqptiw.mongodb.net/`
     );
-    console.log("Conectado ao banco de dados");
     app.listen(port, () =>
-      console.log(`Server running at http://localhost:${port}`)
+      console.log(`Server running at http://localhost:${port}, conectado ao db`)
     );
   } catch (error) {
-    console.error("Erro ao conectar ao banco de dados:", error);
-    process.exit(1);
+    throw error;
   }
 }
 
 dbConnect();
-
-// Middleware de tratamento de erros
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Algo deu errado!');
-});
