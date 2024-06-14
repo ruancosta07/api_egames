@@ -9,7 +9,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 // import swaggerDocument from "../swagger.json";
 import {readFile} from "fs/promises"
-const json = JSON.parse(await readFile("./swagger.json", "utf8"))
+const json = JSON.parse(await readFile("./src/swagger.json"))
 const app = express();
 const port = process.env.PORT || 3000;
 
