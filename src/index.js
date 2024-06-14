@@ -8,11 +8,17 @@ import compression from "compression";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { readFile } from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Necessário para resolver corretamente os caminhos em ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(compression({ level: 3 }));
 app.use(cookieParser());
@@ -25,13 +31,20 @@ app.use(
   })
 );
 
-// Serve a documentação Swagger UI
+// Servir arquivos estáticos
+app.use(express.static(path.join(__dirname)));
+
+// Carregar swagger.json
+let swaggerDocument;
 try {
-  const json = JSON.parse(await readFile(new URL("./swagger.json", import.meta.url)));
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(json));
+  const swaggerPath = path.join(__dirname, 'swagger.json');
+  swaggerDocument = JSON.parse(await readFile(swaggerPath, 'utf-8'));
 } catch (error) {
   console.error("Erro ao carregar o arquivo swagger.json:", error);
 }
+
+// Serve a documentação Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Rotas
 app.use("/", produtos);
@@ -40,7 +53,7 @@ app.use("/", usuario);
 // Conectar ao banco de dados e iniciar o servidor
 async function dbConnect() {
   try {
-    const connection = await mongoose.connect(
+    await mongoose.connect(
       `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.sdqptiw.mongodb.net/`
     );
     console.log("Conectado ao banco de dados");
