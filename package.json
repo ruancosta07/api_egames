@@ -1,18 +1,16 @@
 {
   "name": "egames_api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "type": "module",
+  "main": "index.js",
+  "repository": "https://github.com/ruancosta07/api_egames.git",
+  "license": "MIT",
   "scripts": {
     "start": "node src/index.js",
     "nodemon": "nodemon src/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.43.1",
+    "@supabase/supabase-js": "^2.44.0",
     "bcrypt": "^5.1.1",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
@@ -20,11 +18,12 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.3.5",
+    "mongoose": "^8.4.4",
     "multer": "^1.4.5-lts.1",
     "node-cache": "^5.1.2",
+    "nodemon": "^3.1.4",
     "sharp": "^0.33.4",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^4.6.3"
+    "swagger-ui-express": "^5.0.1"
   }
 }
