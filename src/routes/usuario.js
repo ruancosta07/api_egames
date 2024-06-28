@@ -93,10 +93,10 @@ import authMidleware from "../middlewares/authMiddleware.js";
 
 /** 
  * @swagger
- * /usuario/criar-conta:
+ * /criar-conta:
  *   post:
  *     tags: [Usuario]
- *     summary: Cria uma conta de usuário
+ *     summary: Rota de criação de conta
  *     requestBody:
  *       required: true
  *       content:
@@ -123,10 +123,10 @@ usuario.post("/criar-conta", UsuarioControllers.criarConta);
 
 /**
  * @swagger
- * /usuario/login:
+ * /login:
  *   post:
  *     tags: [Usuario]
- *     summary: Login do usuário
+ *     summary: Rota de login
  *     requestBody:
  *       required: true
  *       content:
@@ -154,7 +154,7 @@ usuario.post("/login", UsuarioControllers.login);
 
 /**
  * @swagger
- * /usuario/token/validar:
+ * /token/validar:
  *   post:
  *     tags: [Usuario]
  *     summary: Valida o token do usuário
@@ -170,9 +170,12 @@ usuario.post("/login", UsuarioControllers.login);
 // * Rota que valida o token do usuário
 usuario.post("/token/validar", authMidleware, UsuarioControllers.validarToken);
 
+// * Rota que valida o email do usuário
+usuario.post("/validar-email", UsuarioControllers.confirmarEmail);
+
 /**
  * @swagger
- * /usuario/carrinho:
+ * /conta/carrinho:
  *   get:
  *     tags: [Usuario]
  *     summary: Carrega o carrinho do usuário
@@ -563,5 +566,49 @@ usuario.post("/conta/confirmar-senha", authMidleware, UsuarioControllers.confirm
 
 // * Rota de alterar a senha do usuário
 usuario.post("/conta/alterar-senha", authMidleware, UsuarioControllers.alterarSenha);
+
+/**
+ * @swagger
+ * /conta/recuperar-senha:
+ *   post:
+ *     tags: [Usuario]
+ *     summary: Recupera a senha do usuário
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Email do usuário
+ *               senha:
+ *                 type: string
+ *                 description: Senha do usuário
+ *     responses:
+ *       200:
+ *         description: Senha recuperada com sucesso
+ *       401:
+ *         description: Senha inválida
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+// * Rota de recuperar a senha do usuário
+usuario.post("/conta/recuperar-senha", UsuarioControllers.recuperarSenha);
+
+// * Rota de finalizar pedido
+usuario.post("/conta/finalizar-pedido", UsuarioControllers.finalizarPedido)
+
+// * Rota de confirmar pedido
+usuario.post("/conta/confirmar-pedido", UsuarioControllers.confirmarPedido)
+
+// * Rota de mover itens dos favoritos para o carrinho
+usuario.post("/conta/mover-para-carrinho", UsuarioControllers.moverItemParaOCarrinho)
 
 export default usuario;
