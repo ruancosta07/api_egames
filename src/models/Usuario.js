@@ -34,6 +34,7 @@ const UsuarioSchema = new Schema({
   },
   cart: [],
   favorites: [],
+  orders: []
 });
 
 UsuarioSchema.pre("save", async function (next) {
