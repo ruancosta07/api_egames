@@ -58,7 +58,6 @@ const login = async (req, res) => {
         email: usuarioEncontrado.email,
         name: usuarioEncontrado.name,
         role: usuarioEncontrado.role,
-        orders: usuarioEncontrado.orders,
       },
       `${jwtKey}`,
       { expiresIn: "1d" }
