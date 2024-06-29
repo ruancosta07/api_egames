@@ -174,28 +174,6 @@ produtos.post(
 // * Rota de carregar um produto pelo ID
 produtos.get("/produto/:id/:slug", ProdutosControllers.carregaProdutoPeloIdeSlug);
 
-
-/**
- * @swagger
- * /produtos/dashboard:
- *   get:
- *     tags: [Produtos]
- *     summary: Retorna a lista de todos os produtos do dashboard
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: A lista de produtos do dashboard
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Dashboard'
- */
-// * Rota de dashboard dos produtos
-produtos.get("/produtos/dashboard", ProdutosControllers.produtosDashBoard);
-
 /**
  * @swagger
  * /produto/{id}/{slug}:

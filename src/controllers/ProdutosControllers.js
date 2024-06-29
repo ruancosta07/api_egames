@@ -136,27 +136,6 @@ const carregaProdutoPeloIdeSlug = async (req, res) => {
   return res.status(200).json(produto);
 };
 
-// * controller de dashboard dos produtos
-const produtosDashBoard = async (req, res) => {
-  const { authorization } = req.headers;
-  if (authorization) {
-    try {
-      const [, token] = authorization.split(" ");
-      const decoded = jwt.verify(token, `${jwtKey}`);
-      if (authorization) {
-        const produtos = await Produto.find().select("_id title slug views");
-        res.status(200).json(produtos);
-      }
-    } catch (error) {
-      throw error;
-    }
-  } else {
-    return res
-      .status(401)
-      .json({ error: "Apenas usuários autenticados podem acessar o dashboard" });
-  }
-};
-
 // * controller de atualizar o views do produto pelo ID
 const aumentarViewsDoProduto = async (req, res) => {
   const { id } = req.params;
@@ -271,7 +250,6 @@ const ProdutosControllers = {
   carregarProdutos,
   criarProduto,
   carregaProdutoPeloIdeSlug,
-  produtosDashBoard,
   aumentarViewsDoProduto,
   editarProduto,
   adicionarComentario,
