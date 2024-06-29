@@ -20,6 +20,7 @@ const carregarProdutos = async (req, res) => {
         "oldPrice",
         "slug",
         "category",
+        "views"
       ]).sort({
         createdAt: "descending",
       });
@@ -32,6 +33,7 @@ const carregarProdutos = async (req, res) => {
           oldPrice: item.oldPrice,
           slug: item.slug,
           category: item.category,
+          views: item.views,
         };
         return produto;
       });
