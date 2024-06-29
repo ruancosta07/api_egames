@@ -160,18 +160,18 @@ const produtosDashBoard = async (req, res) => {
 // * controller de atualizar o views do produto pelo ID
 const aumentarViewsDoProduto = async (req, res) => {
   const { id } = req.params;
-  const { nome } = req.params;
+  const { slug } = req.params;
   try {
-    const produto = await Produto.findOne({ _id: id, slug: nome });
+    const produto = await Produto.findOne({ _id: id, slug});
     if (produto) {
       const produtoAlterado = await Produto.findOneAndUpdate(
-        { _id: id, slug: nome },
+        { _id: id, slug },
         { views: produto.views ? produto.views + 1 : 1 }
       );
       res.json(produtoAlterado);
     }
   } catch (error) {
-    throw error;
+    res.status(404).json({ error: "Produto não encontrado" });
   }
 };
 
