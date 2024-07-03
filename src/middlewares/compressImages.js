@@ -3,12 +3,14 @@
 import sharp from "sharp";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import Usuario from "../models/Usuario.js";
 dotenv.config();
 const jwtKey = process.env.JWT_KEY;
 const compressImages = async (req, res, next) => {
   const [, token] = req.headers.authorization.split(" ");
   const decoded = jwt.decode(token, `${jwtKey}`);
-  if (decoded.role === "admin") {
+  const usuario = await Usuario.findOne({ email: decoded.email });
+  if (usuario) {
     if (req.files) {
       const promises = req.files.map(async (file, index) => {
         const compressedImage = await sharp(file.buffer)
