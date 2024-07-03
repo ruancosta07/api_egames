@@ -251,7 +251,7 @@ produtos.post("/produto/:id/:slug", ProdutosControllers.aumentarViewsDoProduto);
 
 // * Rota de adicionar comentario ao produto pelo ID e nome do produto
 produtos.post(
-  "/produto/comentarios/adicionar/:id/:nome",
+  "/produto/comentarios/adicionar/:id",
   authMidleware,
   ProdutosControllers.adicionarComentario
 );
