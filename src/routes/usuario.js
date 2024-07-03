@@ -611,4 +611,6 @@ usuario.post("/conta/confirmar-pedido", UsuarioControllers.confirmarPedido)
 // * Rota de mover itens dos favoritos para o carrinho
 usuario.post("/conta/mover-para-carrinho", UsuarioControllers.moverItemParaOCarrinho)
 
+usuario.get("/conta/compras", authMidleware, UsuarioControllers.carregarCompras)
+
 export default usuario;
