@@ -526,7 +526,6 @@ const confirmarPedido = async (req, res) => {
       const pedidoEncontrado = usuario.orders.find(
         (item) => item.id === order.id
       );
-      console.log(pedidoEncontrado);
       if (pedidoEncontrado) {
         pedidoEncontrado.status = order.status;
         pedidoEncontrado.paymentMethod = order.paymentMethod;
@@ -551,6 +550,15 @@ const confirmarPedido = async (req, res) => {
   }
 };
 
+const carregarCompras = async (req, res) =>{
+  const [, token] = req.headers.authorization.split(" ");
+  const decoded = jwt.verify(token, `${jwtKey}`);
+  const usuario = await Usuario.findOne({ email: decoded.email });
+  if (usuario) {
+    return res.status(200).json(usuario.orders);
+  }
+}
+
 // * objeto dos controllers do usuário
 const UsuarioControllers = {
   criarConta,
@@ -571,7 +579,8 @@ const UsuarioControllers = {
   recuperarSenha,
   finalizarPedido,
   confirmarPedido,
-  moverItemParaOCarrinho
+  moverItemParaOCarrinho,
+  carregarCompras
 };
 
 export default UsuarioControllers;
