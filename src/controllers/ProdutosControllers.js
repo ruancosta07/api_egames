@@ -5,12 +5,13 @@ import nodeCache from "node-cache";
 import dotenv from "dotenv";
 import Usuario from "../models/Usuario.js";
 dotenv.config();
-const myCache = new nodeCache({ stdTTL: 300, checkperiod: 120 });
+// const myCache = new nodeCache({ stdTTL: 300, checkperiod: 120 });
 const jwtKey = process.env.JWT_KEY;
 // * controller de carregar todos os produtos
 const carregarProdutos = async (req, res) => {
   try {
-    let produtosCarregados = myCache.get("produtosFetch");
+    // let produtosCarregados = myCache.get("produtosFetch");
+     let produtosCarregados
     if (!produtosCarregados) {
       produtosCarregados = await Produto.find({}, [
         "_id",
@@ -20,6 +21,7 @@ const carregarProdutos = async (req, res) => {
         "oldPrice",
         "slug",
         "category",
+        "comments",
         "views"
       ]).sort({
         createdAt: "descending",
@@ -33,11 +35,12 @@ const carregarProdutos = async (req, res) => {
           oldPrice: item.oldPrice,
           slug: item.slug,
           category: item.category,
+          comments: item.comments,
           views: item.views,
         };
         return produto;
       });
-      myCache.set("produtosFetch", produtosCarregados);
+      // myCache.set("produtosFetch", produtosCarregados);
     }
     res.json(produtosCarregados);
   } catch (error) {
@@ -52,8 +55,7 @@ const criarProduto = async (req, res) => {
   const [, token] = req.headers.authorization.split(" ");
   const decoded = jwt.decode(token, `${jwtKey}`);
   const usuario = await Usuario.findOne({ email: decoded.email });
-
-  if (usuario && usuario.role === "admin") {
+  if (usuario) {
     const files = req.files;
     let imageUrls = [];
     for (let file of files) {
@@ -63,7 +65,7 @@ const criarProduto = async (req, res) => {
         await supabaseProducts.storage
           .from("products_images")
           .upload(`${dataAtual}-${file.originalname}`, arrayBufferImage, {
-            contentType: ["image/jpeg", "image/webp"],
+            contentType: ["image/jpeg", "image/webp", "image/png"],
             upsert: false,
           });
 
@@ -157,12 +159,11 @@ const aumentarViewsDoProduto = async (req, res) => {
 // * controller de adicionar comentario ao produto pelo ID e nome do produto
 const adicionarComentario = async function (req, res) {
   const { id } = req.params;
-  const { nome } = req.params;
   const { user, comment, title, rate } = req.body;
   const dataAtual = new Date();
   if (user && comment && title && rate) {
     try {
-      const produto = await Produto.findOne({ _id: id, slug: nome }).select(
+      const produto = await Produto.findOne({ _id: id }).select(
         "comments"
       );
       if (!produto) {
@@ -174,7 +175,7 @@ const adicionarComentario = async function (req, res) {
         comment,
         title,
         rate,
-        createdAt: `${dataAtual.getDate()}/${
+        createdAt: `${dataAtual.getDate() < 10 && "0" + dataAtual.getDate()}/${
           dataAtual.getMonth() < 10 && "0" + (dataAtual.getMonth() + 1)
         }/${dataAtual.getFullYear()}`,
       };
