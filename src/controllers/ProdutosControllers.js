@@ -10,8 +10,8 @@ const jwtKey = process.env.JWT_KEY;
 // * controller de carregar todos os produtos
 const carregarProdutos = async (req, res) => {
   try {
-    // let produtosCarregados = myCache.get("produtosFetch");
-     let produtosCarregados
+    let produtosCarregados = myCache.get("produtosFetch");
+    //  let produtosCarregados
     if (!produtosCarregados) {
       produtosCarregados = await Produto.find({}, [
         "_id",
@@ -40,9 +40,9 @@ const carregarProdutos = async (req, res) => {
         };
         return produto;
       });
-      // myCache.set("produtosFetch", produtosCarregados);
+      myCache.set("produtosFetch", produtosCarregados);
     }
-    res.json(produtosCarregados);
+    return res.json(produtosCarregados);
   } catch (error) {
     throw error;
   }
