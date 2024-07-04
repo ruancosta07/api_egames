@@ -5,7 +5,7 @@ import nodeCache from "node-cache";
 import dotenv from "dotenv";
 import Usuario from "../models/Usuario.js";
 dotenv.config();
-// const myCache = new nodeCache({ stdTTL: 300, checkperiod: 120 });
+const myCache = new nodeCache({ stdTTL: 60, checkperiod: 60 });
 const jwtKey = process.env.JWT_KEY;
 // * controller de carregar todos os produtos
 const carregarProdutos = async (req, res) => {
