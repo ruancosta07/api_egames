@@ -5,14 +5,14 @@ import nodeCache from "node-cache";
 import dotenv from "dotenv";
 import Usuario from "../models/Usuario.js";
 dotenv.config();
-const myCache = new nodeCache({ stdTTL: 60, checkperiod: 60 });
+// const myCache = new nodeCache({ stdTTL: 60, checkperiod: 60 });
 const jwtKey = process.env.JWT_KEY;
 // * controller de carregar todos os produtos
 const carregarProdutos = async (req, res) => {
   try {
-    let produtosCarregados = myCache.get("produtosFetch");
-    //  let produtosCarregados
-    if (!produtosCarregados) {
+    // let produtosCarregados = myCache.get("produtosFetch");
+     let produtosCarregados
+    // if (!produtosCarregados) {
       produtosCarregados = await Produto.find({}, [
         "_id",
         "title",
@@ -40,10 +40,10 @@ const carregarProdutos = async (req, res) => {
         };
         return produto;
       });
-      myCache.set("produtosFetch", produtosCarregados);
+      // myCache.set("produtosFetch", produtosCarregados);
+      return res.json(produtosCarregados);
     }
-    return res.json(produtosCarregados);
-  } catch (error) {
+   catch (error) {
     throw error;
   }
 };
