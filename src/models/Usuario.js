@@ -32,9 +32,21 @@ const UsuarioSchema = new Schema({
     estado: { type: String },
     numero: { type: String },
   },
+  preferences: {
+    twoStepsAuth: {
+      type: Boolean,
+      default: false
+    }
+  },
   cart: [],
   favorites: [],
-  orders: []
+  orders: [],
+  loginToken: {
+    type: String
+  },
+  loginTokenExpiresAt: {
+    type: String
+  }
 });
 
 UsuarioSchema.pre("save", async function (next) {
