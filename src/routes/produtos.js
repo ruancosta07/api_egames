@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import authMidleware from "../middlewares/authMiddleware.js";
+import authMiddleware from "../middlewares/authMiddleware.js";
 import compressImages from "../middlewares/compressImages.js";
 import ProdutosControllers from "../controllers/ProdutosControllers.js";
 const produtos = express.Router();
@@ -137,7 +137,7 @@ produtos.post(
   "/criar-produto",
   upload.array("image"),
   compressImages,
-  authMidleware,
+  authMiddleware,
   ProdutosControllers.criarProduto
 );
 
@@ -172,7 +172,10 @@ produtos.post(
  */
 
 // * Rota de carregar um produto pelo ID
-produtos.get("/produto/:id/:slug", ProdutosControllers.carregaProdutoPeloIdeSlug);
+produtos.get(
+  "/produto/:id/:slug",
+  ProdutosControllers.carregaProdutoPeloIdeSlug
+);
 
 /**
  * @swagger
@@ -196,12 +199,12 @@ produtos.get("/produto/:id/:slug", ProdutosControllers.carregaProdutoPeloIdeSlug
  *     responses:
  *       200:
  *         description: Retornado com sucesso
- */ 
+ */
 
 // * Rota de atualizar o views do produto pelo ID
 produtos.post("/produto/:id/:slug", ProdutosControllers.aumentarViewsDoProduto);
 
-/** 
+/**
  * @swagger
  * /produto/comentarios/adicionar/{id}/{slug}:
  *   post:
@@ -247,20 +250,15 @@ produtos.post("/produto/:id/:slug", ProdutosControllers.aumentarViewsDoProduto);
  *     responses:
  *       200:
  *         description: Retornado com sucesso
-*/
+ */
 
 // * Rota de adicionar comentario ao produto pelo ID e nome do produto
 produtos.post(
   "/produto/comentarios/adicionar/:id",
-  authMidleware,
+  authMiddleware,
   ProdutosControllers.adicionarComentario
 );
 
-// * Rota de editar um produto pelo ID
-produtos.patch(
-  "/produtos/editar/:id",
-  authMidleware,
-  ProdutosControllers.editarProduto
-);
+produtos.get("/produtos/pesquisar", ProdutosControllers.pesquisarProdutos);
 
 export default produtos;
