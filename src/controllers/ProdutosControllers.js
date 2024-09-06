@@ -5,45 +5,25 @@ import nodeCache from "node-cache";
 import dotenv from "dotenv";
 import Usuario from "../models/Usuario.js";
 dotenv.config();
-// const myCache = new nodeCache({ stdTTL: 60, checkperiod: 60 });
+const myCache = new nodeCache({ stdTTL: 60, checkperiod: 60 });
 const jwtKey = process.env.JWT_KEY;
 // * controller de carregar todos os produtos
 const carregarProdutos = async (req, res) => {
   try {
     // let produtosCarregados = myCache.get("produtosFetch");
-     let produtosCarregados
-    // if (!produtosCarregados) {
-      produtosCarregados = await Produto.find({}, [
-        "_id",
-        "title",
-        "images",
-        "price",
-        "oldPrice",
-        "slug",
-        "category",
-        "comments",
-        "views"
-      ]).sort({
-        createdAt: "descending",
-      });
-      produtosCarregados = produtosCarregados.map((item) => {
-        let produto = {
-          _id: item._id,
-          title: item.title,
-          images: item.images[0],
-          price: item.price,
-          oldPrice: item.oldPrice,
-          slug: item.slug,
-          category: item.category,
-          comments: item.comments,
-          views: item.views,
-        };
-        return produto;
-      });
-      // myCache.set("produtosFetch", produtosCarregados);
-      return res.json(produtosCarregados);
+    let produtosCarregados = myCache.get("produtosFetch");
+    if (!produtosCarregados) {
+      produtosCarregados = await Produto.find()
+        .select(
+          "_id title images price oldPrice category section slug views comments tags"
+        )
+        .sort({
+          createdAt: "descending",
+        });
+      myCache.set("produtosFetch", produtosCarregados);
     }
-   catch (error) {
+    return res.json(produtosCarregados);
+  } catch (error) {
     throw error;
   }
 };
@@ -82,7 +62,6 @@ const criarProduto = async (req, res) => {
         console.error("Erro ao obter a URL da imagem:", urlError);
         return res.status(500).json({ error: urlError.message });
       }
-
       imageUrls.push(imageUrl.publicUrl);
     }
 
@@ -143,7 +122,7 @@ const aumentarViewsDoProduto = async (req, res) => {
   const { id } = req.params;
   const { slug } = req.params;
   try {
-    const produto = await Produto.findOne({ _id: id, slug});
+    const produto = await Produto.findOne({ _id: id, slug });
     if (produto) {
       const produtoAlterado = await Produto.findOneAndUpdate(
         { _id: id, slug },
@@ -156,30 +135,55 @@ const aumentarViewsDoProduto = async (req, res) => {
   }
 };
 
+// * controller para pesquisar produtos
+const pesquisarProdutos = async (req, res) => {
+  const { search } = req.query;
+
+  if (!search) {
+    return res.status(400).json({ message: "Termo de pesquisa não fornecido" });
+  }
+
+  try {
+    const produtosEncontrados = await Produto.find({
+      $or: [
+        { title: { $regex: search, $options: "i" } },
+        { section: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } },
+        { tags: { $regex: search, $options: "i" } },
+      ],
+    });
+
+    if (produtosEncontrados.length === 0) {
+      return res.status(404).json({ message: "Nenhum produto encontrado" });
+    }
+
+    res.status(200).json(produtosEncontrados);
+  } catch (erro) {
+    res
+      .status(500)
+      .json({ erro: "Erro ao pesquisar produtos", detalhes: erro.message });
+  }
+};
+
 // * controller de adicionar comentario ao produto pelo ID e nome do produto
 const adicionarComentario = async function (req, res) {
   const { id } = req.params;
-  const { user, comment, title, rate } = req.body;
-  const dataAtual = new Date();
-  if (user && comment && title && rate) {
+  const { name, comment, title, rate, userId } = req.body;
+  if (name && comment && title && rate) {
     try {
-      const produto = await Produto.findOne({ _id: id }).select(
-        "comments"
-      );
+      const produto = await Produto.findById(id);
       if (!produto) {
         return res.status(404).json({ error: "Produto não encontrado" });
       }
-      const comentariosAnteriores = produto.comments;
       const comentario = {
-        user,
+        name,
         comment,
         title,
+        userId,
         rate,
-        createdAt: `${dataAtual.getDate() < 10 && "0" + dataAtual.getDate()}/${
-          dataAtual.getMonth() < 10 && "0" + (dataAtual.getMonth() + 1)
-        }/${dataAtual.getFullYear()}`,
+        createdAt: Date(),
       };
-      comentariosAnteriores.push(comentario);
+      produto.comments.push(comentario);
       await produto.save();
       res.json(produto.comments);
     } catch (error) {
@@ -193,7 +197,7 @@ const adicionarComentario = async function (req, res) {
 // * controller de editar um produto pelo ID
 const editarProduto = async (req, res) => {
   const { id } = req.params;
-  const { authorization } = req.headers;
+
   function limpaSlug(str) {
     let mapaAcentosHex = {
       a: /[\xE0-\xE6]/g,
@@ -216,31 +220,38 @@ const editarProduto = async (req, res) => {
     return str;
   }
 
+  const {
+    title,
+    description,
+    price,
+    oldPrice,
+    category,
+    section,
+    tags,
+    images,
+  } = req.body;
+
+
   try {
-    const [, token] = authorization.split(" ");
-    const decoded = jwt.verify(token, `${jwtKey}`);
     const produto = await Produto.findOne({ _id: id });
-    if (decoded.role === "admin" && produto) {
       const produtoAlterado = await Produto.findOneAndUpdate(
         { _id: id },
         {
-          title: req.body.title,
-          description: req.body.description,
-          price: req.body.price,
-          oldPrice: req.body.oldPrice,
-          slug: limpaSlug(req.body.title),
-          category: req.body.category,
+          title,
+          description,
+          price,
+          oldPrice,
+          slug: limpaSlug(title),
+          category,
+          section,
+          tags,
+          images,
         }
       );
       res.status(200).json({
         message: "Produto atualizado com sucesso",
         produto: produtoAlterado,
       });
-    } else {
-      return res
-        .status(401)
-        .json({ error: "Apenas administradores podem editar produtos" });
-    }
   } catch (error) {
     return res.status(401).json({ error: "Autorização inválida" });
   }
@@ -254,6 +265,7 @@ const ProdutosControllers = {
   aumentarViewsDoProduto,
   editarProduto,
   adicionarComentario,
+  pesquisarProdutos,
 };
 
 export default ProdutosControllers;
