@@ -1,3 +1,4 @@
+import http from "http"
 import express from "express";
 import UsuarioControllers from "../controllers/UsuarioControllers.js";
 const usuario = express.Router();
@@ -599,9 +600,6 @@ usuario.post("/conta/alterar-senha", authMidleware, UsuarioControllers.alterarSe
  *         description: Erro interno do servidor
  */
 
-// * Rota de recuperar a senha do usuário
-usuario.post("/conta/recuperar-senha", UsuarioControllers.recuperarSenha);
-
 // * Rota de finalizar pedido
 usuario.post("/conta/finalizar-pedido", UsuarioControllers.finalizarPedido)
 
@@ -612,5 +610,8 @@ usuario.post("/conta/confirmar-pedido", UsuarioControllers.confirmarPedido)
 usuario.post("/conta/mover-para-carrinho", UsuarioControllers.moverItemParaOCarrinho)
 
 usuario.get("/conta/compras", authMidleware, UsuarioControllers.carregarCompras)
-
+usuario.post("/login/confirmar-email", UsuarioControllers.enviarEmailConfirmacao)
+usuario.post("/login/confirmar-codigo", UsuarioControllers.confirmarCodigo)
+usuario.patch("/conta/recuperar-senha", UsuarioControllers.recuperarSenha)
+usuario.post("/conta/excluir-conta", authMidleware, UsuarioControllers.excluirConta)
 export default usuario;
