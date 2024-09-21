@@ -33,6 +33,10 @@ const ProdutoSchema = new Schema({
     type: String,
     required: true,
   },
+  section:{
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: String,
     default: Date.now(),
