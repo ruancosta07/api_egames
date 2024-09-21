@@ -136,10 +136,11 @@ produtos.get("/produtos", ProdutosControllers.carregarProdutos);
 produtos.post(
   "/criar-produto",
   upload.array("image"),
-  compressImages,
+  // compressImages,
   authMiddleware,
   ProdutosControllers.criarProduto
 );
+produtos.delete("/excluir-produto/:id", authMiddleware, ProdutosControllers.excluirProduto)
 
 /**
  * @swagger
@@ -204,6 +205,18 @@ produtos.get(
 // * Rota de atualizar o views do produto pelo ID
 produtos.post("/produto/:id/:slug", ProdutosControllers.aumentarViewsDoProduto);
 
+produtos.patch("/editar-produto/:id", ProdutosControllers.editarProduto);
+
+produtos.get("/produtos/vendas", authMiddleware, ProdutosControllers.getVendas)
+produtos.get("/usuarios/quantidade", authMiddleware, ProdutosControllers.getUsers)
+
+produtos.post(
+  "/enviar-imagens",
+  upload.array("image"),
+  authMiddleware,
+  // compressImages,
+  ProdutosControllers.enviarImagens
+);
 /**
  * @swagger
  * /produto/comentarios/adicionar/{id}/{slug}:
