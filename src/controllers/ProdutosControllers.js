@@ -10,19 +10,14 @@ const jwtKey = process.env.JWT_KEY;
 // * controller de carregar todos os produtos
 const carregarProdutos = async (req, res) => {
   try {
-    // let produtosCarregados = myCache.get("produtosFetch");
-    let produtosCarregados = myCache.get("produtosFetch");
-    if (!produtosCarregados) {
-      produtosCarregados = await Produto.find()
-        .select(
-          "_id title images price oldPrice category section slug views comments tags"
-        )
-        .sort({
-          createdAt: "descending",
-        });
-      myCache.set("produtosFetch", produtosCarregados);
-    }
-    return res.json(produtosCarregados);
+    const produtos = await Produto.find()
+      .select(
+        "_id title images price oldPrice category section slug views comments tags description"
+      )
+      .sort({
+        createdAt: "descending",
+      });
+      return res.status(200).json(produtos)
   } catch (error) {
     throw error;
   }
@@ -30,12 +25,12 @@ const carregarProdutos = async (req, res) => {
 
 // * controller de criar um novo produto
 const criarProduto = async (req, res) => {
-  const { title, description, price, oldPrice, category } = req.body;
+  const { title, description, price, oldPrice, section, category } = req.body;
   const dataAtual = Date.now();
-  const [, token] = req.headers.authorization.split(" ");
-  const decoded = jwt.decode(token, `${jwtKey}`);
-  const usuario = await Usuario.findOne({ email: decoded.email });
-  if (usuario) {
+  // const [, token] = req.headers.authorization.split(" ");
+  // const decoded = jwt.decode(token, `${jwtKey}`);
+  // const usuario = await Usuario.findOne({ email: decoded.email });
+  if (true) {
     const files = req.files;
     let imageUrls = [];
     for (let file of files) {
@@ -93,6 +88,7 @@ const criarProduto = async (req, res) => {
       price,
       oldPrice,
       category,
+      section,
       slug: limpaSlug(title),
       images: imageUrls,
     };
@@ -104,6 +100,18 @@ const criarProduto = async (req, res) => {
     }
   }
 };
+
+const excluirProduto = async(req, res)=> {
+  const {id} = req.params
+  try{
+    const produto = await Produto.findOneAndDelete({_id: id})
+    return res.status(200).json({message: "Produto excluído com sucesso"})
+  }
+  catch(err){
+    console.log(err)
+    return res.status(500).json({message: "Erro ao excluir produto"})
+  }
+}
 
 // * controller de carregar um produto pelo ID
 const carregaProdutoPeloIdeSlug = async (req, res) => {
@@ -194,6 +202,67 @@ const adicionarComentario = async function (req, res) {
   }
 };
 
+const enviarImagens = async (req, res) => {
+  try {
+    console.log('Recebendo imagens no backend');
+    const files = req.files;
+    let imageUrls = [];
+
+    for (let file of files) {
+      const arrayBufferImage = Uint8Array.from(file.buffer).buffer;
+      const uniqueFileName = `${Date.now()}-${file.originalname}`;
+
+      const { data: uploadedFile, error: uploadError } = await supabaseProducts.storage
+        .from("products_images")
+        .upload(uniqueFileName, arrayBufferImage, {
+          contentType: file.mimetype,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Erro ao fazer upload da imagem:", uploadError);
+        return res.status(500).json({ error: uploadError.message });
+      }
+
+      const { data: imageUrl, error: urlError } = supabaseProducts.storage
+        .from("products_images")
+        .getPublicUrl(uniqueFileName);
+
+      if (urlError) {
+        console.error("Erro ao obter a URL da imagem:", urlError);
+        return res.status(500).json({ error: urlError.message });
+      }
+      imageUrls.push(imageUrl.publicUrl);
+    }
+
+    return res.status(200).json(imageUrls);
+  } catch (err) {
+    console.error('Erro no backend:', err);
+    return res.status(500).json({ error: 'Erro ao processar as imagens.' });
+  }
+};
+
+const getVendas = async(req, res)=> {
+  try{
+    const usuarios = await Usuario.find()
+    const pedidosConcluidos = usuarios.flatMap((u) => u.orders.filter((o) => o.status === 'finished'));
+    return res.status(200).json(pedidosConcluidos)
+  }
+  catch(err){
+    console.log(err)
+  }
+}
+
+const getUsers = async(req, res)=> {
+  try{
+    const usuariosLength = await Usuario.find()
+    return res.status(200).json(usuariosLength.length)
+  }
+  catch(err){
+    console.log(err)
+  }
+}
+
 // * controller de editar um produto pelo ID
 const editarProduto = async (req, res) => {
   const { id } = req.params;
@@ -231,28 +300,24 @@ const editarProduto = async (req, res) => {
     images,
   } = req.body;
 
-
   try {
-    const produto = await Produto.findOne({ _id: id });
-      const produtoAlterado = await Produto.findOneAndUpdate(
-        { _id: id },
-        {
-          title,
-          description,
-          price,
-          oldPrice,
-          slug: limpaSlug(title),
-          category,
-          section,
-          tags,
-          images,
-        }
-      );
-      res.status(200).json({
-        message: "Produto atualizado com sucesso",
-        produto: produtoAlterado,
-      });
-  } catch (error) {
+    const produtoAlterado = await Produto.findByIdAndUpdate(id, {
+      title,
+      description,
+      price,
+      oldPrice,
+      slug: limpaSlug(title),
+      category,
+      section,
+      tags,
+      images,
+    });
+    return res.status(200).json({
+      message: "Produto atualizado com sucesso",
+      produto: produtoAlterado,
+    });
+  } catch (err) {
+    console.log(err);
     return res.status(401).json({ error: "Autorização inválida" });
   }
 };
@@ -261,11 +326,15 @@ const editarProduto = async (req, res) => {
 const ProdutosControllers = {
   carregarProdutos,
   criarProduto,
+  excluirProduto,
   carregaProdutoPeloIdeSlug,
   aumentarViewsDoProduto,
   editarProduto,
   adicionarComentario,
   pesquisarProdutos,
+  enviarImagens,
+  getVendas,
+  getUsers
 };
 
 export default ProdutosControllers;
